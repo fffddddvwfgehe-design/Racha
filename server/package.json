@@ -1,0 +1,16 @@
+{
+  "name": "racha-webpush-server",
+  "version": "1.0.0",
+  "description": "Servidor pequeño para Web Push (VAPID) para la app Racha",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "gen-keys": "node gen-keys.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.2",
+    "web-push": "^3.5.0"
+  }
+}
