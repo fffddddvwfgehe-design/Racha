@@ -1,4 +1,3 @@
-<!-- Enhanced client: adds Web Push subscription UI and sends subscription to server -->
 <!doctype html>
 <html lang="es">
 <head>
@@ -9,66 +8,167 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
   <style>
-    :root{ --bg:#f6f9ff; --card:#ffffff; --accent:#ffb547; --accent-2:#ff7a7a; --muted:#6b7280; }
+    :root{
+      --bg:#f6f9ff; --card:#ffffff; --accent:#ffb547; --accent-2:#ff7a7a; --muted:#6b7280;
+      --glass: rgba(255,255,255,0.7);
+      --glass-2: rgba(255,255,255,0.85);
+    }
     *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:linear-gradient(180deg,#f6f9ff,#eef6ff);margin:0;padding:2rem;color:#0f172a}
-    .wrap{max-width:880px;margin:0 auto}
-    .header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
-    .logo{width:84px;height:84px;flex:0 0 84px;border-radius:18px;background:linear-gradient(180deg,var(--accent),#ff9b2b);display:flex;align-items:center;justify-content:center}
-    h1{margin:0;font-size:1.25rem}
-    p.lead{margin:0;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:380px 1fr;gap:1rem}
-    @media(max-width:820px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);padding:1.25rem;border-radius:14px;box-shadow:0 10px 30px rgba(16,24,40,0.06)}
+    html,body{height:100%}
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:linear-gradient(180deg,#f6f9ff,#eef6ff);margin:0;padding:0;color:#0f172a}
+
+    /* top nav */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:transparent}
+    .brand{display:flex;align-items:center;gap:.75rem}
+    .brand .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(180deg,var(--accent),#ff9b2b);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(255,123,0,.12)}
+    .brand h1{font-size:1.05rem;margin:0}
+    .controls{display:flex;align-items:center;gap:.5rem}
+    .icon-btn{background:transparent;border:1px solid rgba(16,24,40,0.06);padding:.5rem;border-radius:8px;cursor:pointer}
+
+    .wrap{max-width:980px;margin:1rem auto;padding:0 1rem}
+    .grid{display:grid;grid-template-columns:420px 1fr;gap:1rem}
+    @media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);padding:1.1rem;border-radius:14px;box-shadow:0 10px 30px rgba(16,24,40,0.06)}
+
+    .streak-area{display:flex;flex-direction:column;align-items:center;gap:.9rem}
+    .ring{width:230px;height:230px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--accent) 0deg, #e6f3ff 0deg);position:relative}
+    .ring-inner{width:184px;height:184px;border-radius:50%;background:linear-gradient(180deg,#fff,#fbfdff);display:flex;flex-direction:column;align-items:center;justify-content:center;border:6px solid rgba(255,255,255,0.6)}
+    .streak-num{font-size:46px;font-weight:900;color:#0f172a}
+    .streak-label{color:var(--muted);font-weight:600}
+
+    .mascot{width:92px;height:92px}
+    .mascot-anim{transform-origin:center center;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+
+    .actions{display:flex;gap:.65rem;align-items:center}
+    .btn{padding:.68rem 1rem;border-radius:12px;border:0;background:linear-gradient(180deg,var(--accent),#ff9833);color:white;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(255,138,61,.18)}
+    .btn.secondary{background:transparent;color:#334155;border:1px solid #e6eefc;box-shadow:none}
+    .btn.ghost{background:transparent;color:#334155;border:0}
+    .btn[disabled]{opacity:.6;cursor:default}
+
+    .meta{color:var(--muted);font-size:.95rem;text-align:center}
+
+    .right h3{margin-top:0}
     .small{font-size:.9rem;color:var(--muted)}
-    .btn{padding:.65rem 1rem;border-radius:10px;border:0;background:linear-gradient(180deg,var(--accent),#ff9833);color:white;font-weight:700;cursor:pointer}
-    .btn.secondary{background:transparent;color:#334155;border:1px solid #e6eefc}
-    .input{padding:.55rem;border-radius:8px;border:1px solid #e6eefc}
+
+    .profiles{display:flex;gap:.5rem;flex-wrap:wrap}
+    .profile-pill{background:var(--glass-2);border-radius:999px;padding:.4rem .6rem;border:1px solid rgba(16,24,40,0.03);cursor:pointer}
+    .profile-pill.active{background:linear-gradient(180deg,#fff,#fffbf2);box-shadow:0 6px 18px rgba(255,123,0,.06)}
+
+    .settings{display:flex;flex-direction:column;gap:.5rem;margin-top:.6rem}
+    .row{display:flex;gap:.5rem;align-items:center}
+    input[type="text"], input[type="time"]{padding:.55rem;border-radius:8px;border:1px solid #e6eefc}
+
+    .footer-note{margin-top:1rem;color:#8b90a0;font-size:.85rem}
+
+    /* modal */
+    .modal-back{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(7,12,20,0.35);display:none;align-items:center;justify-content:center;z-index:40}
+    .modal{background:var(--card);padding:1rem;border-radius:12px;width:min(520px,94%);box-shadow:0 20px 50px rgba(2,6,23,0.2)}
+
+    /* responsive small tweaks */
+    @media(max-width:520px){ .ring{width:180px;height:180px} .ring-inner{width:140px;height:140px} .streak-num{font-size:36px} }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header">
+  <div class="topbar">
+    <div class="brand">
       <div class="logo" aria-hidden>
-        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="mascota"><defs><radialGradient id="gA" cx="40%" cy="30%"><stop offset="0%" stop-color="#fff9d8"/><stop offset="40%" stop-color="#ffd24a"/><stop offset="100%" stop-color="#ff9b2b"/></radialGradient></defs><path d="M30 60c0-22 10-40 30-40s30 18 30 40c0 13-10 32-30 32S30 73 30 60z" fill="url(#gA)" stroke="#ffb347" stroke-width="1"/></svg>
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="width:36px;height:36px"><defs><linearGradient id="lg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffd24a"/><stop offset="1" stop-color="#ff9b2b"/></linearGradient></defs><path d="M22 44c0-14 6-26 18-26s18 12 18 26c0 8-6 20-18 20S22 52 22 44z" fill="url(#lg)"/></svg>
       </div>
       <div>
         <h1>Racha bonita</h1>
-        <p class="lead">Toca el botón cada día para mantener tu racha. Habilitá notificaciones para que te recuerde.</p>
+        <div class="small">Pequeñas victorias, día a día</div>
       </div>
     </div>
-
-    <div class="grid">
-      <div class="card">
-        <h3>Notificaciones</h3>
-        <div class="small">Server URL (donde está desplegado el servidor Web Push):</div>
-        <div style="display:flex;gap:.5rem;margin-top:.5rem">
-          <input id="serverUrl" class="input" placeholder="https://mi-server.example.com" />
-          <button id="saveServer" class="btn secondary">Guardar</button>
-        </div>
-        <div style="margin-top:.8rem" class="small">Hora de recordatorio (por usuario):</div>
-        <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem">
-          <input id="remindHour" type="time" class="input" value="20:00" />
-          <button id="enablePush" class="btn">Habilitar notificaciones</button>
-        </div>
-        <div style="margin-top:.8rem" id="pushStatus" class="small">Estado: no configurado</div>
-      </div>
-
-      <div class="card">
-        <h3>Cuenta local / Multi-cuentas</h3>
-        <div class="small">Usa nombres para separar rachas en este navegador. Estas cuentas se sincronizan con las suscripciones push en el servidor.</div>
-        <div style="margin-top:.6rem;display:flex;gap:.5rem;align-items:center">
-          <input id="username" class="input" placeholder="Tu nombre" />
-          <button id="setUser" class="btn secondary">Usar</button>
-        </div>
-        <div style="margin-top:.6rem"><button id="markBtn" class="btn">Marcar hoy</button> <button id="exportBtn" class="btn secondary">Exportar</button></div>
-        <div style="margin-top:.6rem" id="uiStatus" class="small">Usuario: -</div>
-      </div>
+    <div class="controls">
+      <button id="openSettings" class="icon-btn">⚙️ Ajustes</button>
+      <button id="openProfiles" class="icon-btn">👥 Cuentas</button>
     </div>
   </div>
 
+  <main class="wrap">
+    <div class="grid">
+      <div class="card streak-area">
+        <div class="ring" id="progressRing" aria-hidden>
+          <div class="ring-inner">
+            <div class="mascot mascot-anim" id="mascotLarge" aria-hidden>
+              <!-- inline SVG - stylized mascot -->
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs><radialGradient id="bgGrad" cx="40%" cy="30%"><stop offset="0%" stop-color="#fff9d8"/><stop offset="45%" stop-color="#ffd24a"/><stop offset="100%" stop-color="#ff9b2b"/></radialGradient></defs>
+                <g>
+                  <path d="M50 100c0-60 40-100 100-100s100 40 100 100c0 35-30 85-100 85S50 140 50 100z" transform="translate(-50,-20) scale(0.9)" fill="url(#bgGrad)" stroke="#ffb347" stroke-width="1.6"/>
+                  <g transform="translate(0,-10)">
+                    <ellipse cx="82" cy="90" rx="20" ry="24" fill="#fff" />
+                    <ellipse cx="138" cy="90" rx="20" ry="24" fill="#fff" />
+                    <circle cx="82" cy="96" r="9" fill="#3b2a1f" />
+                    <circle cx="138" cy="96" r="9" fill="#3b2a1f" />
+                    <circle cx="92" cy="86" r="3" fill="#fff" opacity="0.95" />
+                    <circle cx="150" cy="86" r="3" fill="#fff" opacity="0.95" />
+                  </g>
+                  <path d="M94 130c6 5 20 5 28 0" stroke="#4b2a00" stroke-width="3" stroke-linecap="round" fill="none"/>
+                </g>
+              </svg>
+            </div>
+            <div style="text-align:center">
+              <div class="streak-num" id="streakCount">0</div>
+              <div class="streak-label">Días seguidos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="checkBtn" class="btn">Marcar hoy</button>
+          <button id="undoBtn" class="btn secondary">Deshacer</button>
+          <button id="resetBtn" class="btn ghost">Reset</button>
+        </div>
+
+        <div class="meta" id="statusText">Seleccioná o creá una cuenta para empezar.</div>
+
+        <div class="small" style="margin-top:.6rem">Insignia al primer día:</div>
+        <div style="margin-top:.4rem"><span id="badge" class="badge hidden">🏅 Logro desbloqueado: empezar es bueno</span></div>
+
+        <div class="footer-note">Consejo: guarda la configuración en Ajustes para recibir recordatorios diarios.</div>
+      </div>
+
+      <div class="card right">
+        <h3>Administrar cuentas</h3>
+        <div class="small">Crea varias cuentas locales (se guardan en este navegador). También puedes activar notificaciones push y elegir una hora por cuenta.</div>
+
+        <div style="margin-top:1rem" class="settings">
+          <div class="row">
+            <input id="newProfile" type="text" placeholder="Nuevo nombre de cuenta (p. ej. Ana)" />
+            <button id="addProfile" class="btn">Añadir</button>
+          </div>
+          <div class="small">Cuentas existentes:</div>
+          <div id="profilesList" class="profiles"></div>
+
+          <div style="margin-top:.6rem" class="small">Servidor WebPush:</div>
+          <div class="row"><input id="serverUrl" type="text" placeholder="https://mi-server.example.com" style="flex:1" /><button id="saveServer" class="btn secondary">Guardar</button></div>
+
+          <div style="margin-top:.6rem" class="small">Acciones:</div>
+          <div class="row"><button id="exportBtn" class="btn secondary">Exportar datos</button><button id="importBtn" class="btn secondary">Importar</button><input id="importFile" type="file" accept="application/json" style="display:none" /></div>
+
+          <div style="margin-top:.6rem" id="pushControls"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- modal for settings / subscribe management -->
+  <div id="modal" class="modal-back"><div class="modal" role="dialog" aria-modal="true">
+    <h3>Ajustes de notificaciones</h3>
+    <div class="small">Seleccioná la hora de recordatorio para esta cuenta y habilitá/deshabilitá notificaciones push.</div>
+    <div style="margin-top:.6rem" class="row">Hora: <input id="remindHour" type="time" value="20:00" /></div>
+    <div style="margin-top:.6rem" class="row"><button id="enablePush" class="btn">Habilitar notificaciones</button><button id="disablePush" class="btn secondary">Deshabilitar</button></div>
+    <div style="margin-top:.6rem;text-align:right"><button id="closeModal" class="btn secondary">Cerrar</button></div>
+  </div></div>
+
+  <canvas id="confetti-canvas"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
   <script>
-    // helpers
+    // Utilities
     function urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
       const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -78,73 +178,132 @@
       return outputArray;
     }
 
+    // Elements
+    const profilesList = document.getElementById('profilesList');
+    const addProfileBtn = document.getElementById('addProfile');
+    const newProfileInput = document.getElementById('newProfile');
     const serverUrlInput = document.getElementById('serverUrl');
-    const saveServer = document.getElementById('saveServer');
-    const enablePush = document.getElementById('enablePush');
-    const pushStatus = document.getElementById('pushStatus');
-    const remindHour = document.getElementById('remindHour');
-    const username = document.getElementById('username');
-    const setUser = document.getElementById('setUser');
-    const uiStatus = document.getElementById('uiStatus');
-    const markBtn = document.getElementById('markBtn');
+    const saveServerBtn = document.getElementById('saveServer');
     const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
 
-    let SERVER = localStorage.getItem('racha_server') || '';
-    if(SERVER) serverUrlInput.value = SERVER;
+    const modal = document.getElementById('modal');
+    const openSettings = document.getElementById('openSettings');
+    const openProfiles = document.getElementById('openProfiles');
+    const enablePushBtn = document.getElementById('enablePush');
+    const disablePushBtn = document.getElementById('disablePush');
+    const remindHourInput = document.getElementById('remindHour');
+    const closeModal = document.getElementById('closeModal');
 
-    saveServer.addEventListener('click', ()=>{ SERVER = serverUrlInput.value.trim(); localStorage.setItem('racha_server', SERVER); alert('Server guardado'); });
+    const checkBtn = document.getElementById('checkBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const streakCountEl = document.getElementById('streakCount');
+    const statusText = document.getElementById('statusText');
+    const badgeEl = document.getElementById('badge');
+    const progressRing = document.getElementById('progressRing');
 
-    saveUserUI();
-    function saveUserUI(){ const u = localStorage.getItem('racha_user'); uiStatus.textContent = 'Usuario: ' + (u || '-'); }
+    // State & storage helpers
+    function profilesKey(){ return 'racha_profiles_v1'; }
+    function selectedKey(){ return 'racha_selected_v1'; }
+    function serverKey(){ return 'racha_server'; }
 
-    setUser.addEventListener('click', ()=>{ const u = username.value.trim(); if(!u) return alert('Ingresa nombre'); localStorage.setItem('racha_user', u); saveUserUI(); });
+    function loadProfiles(){ try{ return JSON.parse(localStorage.getItem(profilesKey())||'[]'); }catch(e){return [];} }
+    function saveProfiles(list){ localStorage.setItem(profilesKey(), JSON.stringify(list)); }
+    function getSelected(){ return localStorage.getItem(selectedKey()); }
+    function setSelected(name){ localStorage.setItem(selectedKey(), name); renderProfiles(); loadState(); }
+    function saveServer(url){ localStorage.setItem(serverKey(), url); }
+    function getServer(){ return localStorage.getItem(serverKey()) || ''; }
 
-    // register service worker on client origin
-    async function registerSW(){
-      if('serviceWorker' in navigator){
-        try{ const reg = await navigator.serviceWorker.register('/sw.js'); console.log('SW registered', reg); return reg; }catch(e){ console.error('SW failed', e); throw e; }
-      } else throw new Error('serviceWorker not supported');
-    }
+    function makeStorageKey(name){ return 'streak_user_' + name.toLowerCase().replace(/\s+/g,'_'); }
 
-    enablePush.addEventListener('click', async ()=>{
-      if(!SERVER) return alert('Guarda la URL del servidor primero');
-      if(!localStorage.getItem('racha_user')) return alert('Configura un usuario primero');
+    // Push & SW helpers
+    async function registerSW(){ if('serviceWorker' in navigator){ return await navigator.serviceWorker.register('/sw.js'); } else throw new Error('Service Worker no soportado'); }
+
+    async function getVapidPublicKey(){ const srv = getServer(); if(!srv) throw new Error('Server no configurado'); const res = await fetch(srv + '/vapidPublicKey'); const json = await res.json(); if(json.error) throw new Error(json.error); return json.publicKey; }
+
+    async function subscribePush(remindHour){ const reg = await registerSW(); const publicKey = await getVapidPublicKey(); const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) }); return sub; }
+
+    async function sendSubscribeToServer(user, subscription, remindHour){ const srv = getServer(); await fetch(srv + '/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user, subscription, remindHour }) }); }
+    async function sendUnsubscribeToServer(user, endpoint){ const srv = getServer(); await fetch(srv + '/unsubscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user, endpoint }) }); }
+
+    // UI render
+    function renderProfiles(){ profilesList.innerHTML=''; const profiles = loadProfiles(); const selected = getSelected(); profiles.forEach(p=>{ const el = document.createElement('div'); el.className='profile-pill'+(p===selected?' active':''); el.textContent = p; el.title='Seleccionar ' + p; el.addEventListener('click', ()=> setSelected(p)); const del = document.createElement('button'); del.textContent='✕'; del.style.marginLeft='8px'; del.style.border='none'; del.style.background='transparent'; del.style.cursor='pointer'; del.addEventListener('click',(e)=>{ e.stopPropagation(); if(confirm("Borrar cuenta '"+p+"' ?")){ removeProfile(p); } }); el.appendChild(del); profilesList.appendChild(el); }); }
+
+    function addProfile(name){ if(!name) return alert('Nombre vacío'); const list = loadProfiles(); if(list.includes(name)) return alert('Ya existe'); list.push(name); saveProfiles(list); setSelected(name); renderProfiles(); }
+    function removeProfile(name){ let list = loadProfiles(); list = list.filter(x=>x!==name); saveProfiles(list); const sel = getSelected(); if(sel===name){ if(list.length) setSelected(list[0]); else { localStorage.removeItem(selectedKey()); renderProfiles(); loadState(); } } else { renderProfiles(); } }
+
+    addProfileBtn.addEventListener('click', ()=>{ addProfile(newProfileInput.value.trim()); newProfileInput.value=''; });
+
+    // load server url
+    serverUrlInput.value = getServer(); saveServerBtn.addEventListener('click', ()=>{ saveServer(serverUrlInput.value.trim()); alert('Servidor guardado'); });
+
+    // modal controls
+    openSettings.addEventListener('click', ()=>{ modal.style.display='flex'; const sel = getSelected(); if(!sel) return alert('Selecciona una cuenta primero'); const key = makeStorageKey(sel); const raw = localStorage.getItem(key); const state = raw?JSON.parse(raw):{lastCheck:null,streak:0,badgeUnlocked:false, remindHour:'20:00'}; remindHourInput.value = state.remindHour || '20:00'; });
+    closeModal.addEventListener('click', ()=> modal.style.display='none');
+
+    enablePushBtn.addEventListener('click', async ()=>{
       try{
-        pushStatus.textContent = 'Registrando service worker...';
-        const reg = await registerSW();
-        pushStatus.textContent = 'Obteniendo clave pública desde servidor...';
-        const r = await fetch(SERVER + '/vapidPublicKey');
-        const data = await r.json();
-        if(data.error) throw new Error(data.error);
-        const publicKey = data.publicKey;
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey)
-        });
-        pushStatus.textContent = 'Enviando suscripción al servidor...';
-        const body = { user: localStorage.getItem('racha_user'), subscription: sub, remindHour: remindHour.value || '20:00' };
-        await fetch(SERVER + '/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-        pushStatus.textContent = 'Notificaciones habilitadas ✅';
-      }catch(e){ console.error(e); pushStatus.textContent = 'Error: ' + (e.message || e); alert('No se pudo habilitar: '+e.message); }
+        const sel = getSelected(); if(!sel) return alert('Selecciona una cuenta'); if(!getServer()) return alert('Configura primero el servidor en la derecha');
+        const sub = await subscribePush(remindHourInput.value || '20:00');
+        await sendSubscribeToServer(sel, sub, remindHourInput.value || '20:00');
+        alert('Notificaciones habilitadas para ' + sel);
+        modal.style.display='none';
+      }catch(e){ alert('Error: '+e.message); }
     });
 
-    // mark today action (local storage simple)
-    markBtn.addEventListener('click', ()=>{
-      const user = localStorage.getItem('racha_user'); if(!user) return alert('Configura usuario');
-      const key = 'streak_user_' + user.toLowerCase().replace(/\s+/g,'_');
-      const raw = localStorage.getItem(key); let state = raw ? JSON.parse(raw) : { lastCheck: null, streak: 0 };
-      const today = new Date().toISOString().slice(0,10);
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
-      if(state.lastCheck === today) return alert('Ya marcaste hoy');
-      if(state.lastCheck === yesterday) state.streak = (state.streak||0) + 1; else state.streak = 1;
-      state.lastCheck = today; localStorage.setItem(key, JSON.stringify(state)); alert('Racha ahora ' + state.streak);
+    disablePushBtn.addEventListener('click', async ()=>{
+      try{
+        const sel = getSelected(); if(!sel) return alert('Selecciona cuenta'); // try to unsubscribe from SW
+        const reg = await navigator.serviceWorker.getRegistration(); if(reg){ const subs = await reg.pushManager.getSubscription(); if(subs){ await sendUnsubscribeToServer(sel, subs.endpoint); await subs.unsubscribe(); alert('Desuscrito'); } }
+        modal.style.display='none';
+      }catch(e){ alert('Error: '+e.message); }
     });
 
+    // Export/Import
     exportBtn.addEventListener('click', ()=>{
-      const user = localStorage.getItem('racha_user'); if(!user) return alert('Configura usuario');
-      const key = 'streak_user_' + user.toLowerCase().replace(/\s+/g,'_'); const raw = localStorage.getItem(key) || '{}';
-      const blob = new Blob([raw], { type:'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = key + '.json'; a.click(); URL.revokeObjectURL(url);
+      const profiles = loadProfiles(); const data = {};
+      profiles.forEach(p=>{ const key = makeStorageKey(p); data[p] = JSON.parse(localStorage.getItem(key) || '{}'); });
+      const blob = new Blob([JSON.stringify({profiles, data}, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='racha_backup.json'; a.click(); URL.revokeObjectURL(url);
     });
+    importBtn.addEventListener('click', ()=> importFile.click());
+    importFile.addEventListener('change', (e)=>{
+      const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{ try{ const obj = JSON.parse(r.result); if(obj.profiles && obj.data){ saveProfiles(obj.profiles); Object.keys(obj.data).forEach(p=>{ localStorage.setItem(makeStorageKey(p), JSON.stringify(obj.data[p])); }); alert('Importado'); renderProfiles(); } else alert('Archivo inválido'); }catch(err){ alert('Error: '+err.message); } }; r.readAsText(f); e.target.value=''; });
+
+    // Main streak logic
+    let lastStateSnapshot = null;
+    function loadState(){ const sel = getSelected(); if(!sel){ streakCountEl.textContent='0'; statusText.textContent='Selecciona o crea una cuenta para empezar.'; badgeEl.classList.add('hidden'); updateRing(); return; }
+      const key = makeStorageKey(sel); const raw = localStorage.getItem(key); const st = raw?JSON.parse(raw):{lastCheck:null,streak:0,badgeUnlocked:false, remindHour:'20:00'}; lastStateSnapshot = JSON.parse(JSON.stringify(st)); streakCountEl.textContent = st.streak || 0; if(st.lastCheck === (new Date()).toISOString().slice(0,10)){ checkBtn.disabled=true; statusText.textContent='Ya marcaste hoy.'; } else { checkBtn.disabled=false; statusText.textContent='Pulsa "Marcar hoy" para mantener la racha.'; }
+      if(st.badgeUnlocked) badgeEl.classList.remove('hidden'); else badgeEl.classList.add('hidden'); remindHourInput.value = st.remindHour || '20:00'; updateRing(); }
+
+    function saveStateForSelected(state){ const sel = getSelected(); if(!sel) return; localStorage.setItem(makeStorageKey(sel), JSON.stringify(state)); }
+
+    checkBtn.addEventListener('click', ()=>{
+      const sel = getSelected(); if(!sel) return alert('Selecciona cuenta'); const key = makeStorageKey(sel); const raw = localStorage.getItem(key); const st = raw?JSON.parse(raw):{lastCheck:null,streak:0,badgeUnlocked:false,remindHour:'20:00'};
+      const today = new Date().toISOString().slice(0,10); const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+      if(st.lastCheck === today) return;
+      if(st.lastCheck === yesterday) st.streak = (st.streak||0) + 1; else st.streak = 1;
+      st.lastCheck = today; if(!st.badgeUnlocked && st.streak >= 1){ st.badgeUnlocked=true; triggerBadge(); }
+      saveStateForSelected(st); loadState();
+    });
+
+    undoBtn.addEventListener('click', ()=>{
+      const sel = getSelected(); if(!sel) return; const key = makeStorageKey(sel); const raw = localStorage.getItem(key); if(!raw) return; const st = JSON.parse(raw);
+      // simple undo: restore previous snapshot if exists
+      if(lastStateSnapshot){ localStorage.setItem(key, JSON.stringify(lastStateSnapshot)); loadState(); alert('Deshecho'); } else { alert('No hay acción para deshacer'); }
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      const sel = getSelected(); if(!sel) return; if(!confirm('Reiniciar racha de ' + sel + '?')) return; const key = makeStorageKey(sel); const st = {lastCheck:null,streak:0,badgeUnlocked:false,remindHour:'20:00'}; localStorage.setItem(key, JSON.stringify(st)); loadState(); updateRing(); });
+
+    function updateRing(){ const val = Math.min((JSON.parse(localStorage.getItem(makeStorageKey(getSelected())) || '{}').streak)||0, 30); const pct = Math.round((val/30)*100); const deg = Math.round((pct/100)*360); progressRing.style.background = `conic-gradient(var(--accent) ${deg}deg, #e6f3ff ${deg}deg)`; }
+
+    function triggerBadge(){ if(typeof confetti === 'function'){ confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } }); } badgeEl.classList.add('pulse'); const m = document.getElementById('mascotLarge'); if(m) m.classList.add('mascot-burst'); setTimeout(()=>{ badgeEl.classList.remove('pulse'); if(m) m.classList.remove('mascot-burst'); },1200); }
+
+    // init
+    (function init(){ renderProfiles(); serverUrlInput.value = getServer(); const first = loadProfiles()[0]; if(first && !getSelected()){ setSelected(first); } loadState(); })();
 
   </script>
 </body>
