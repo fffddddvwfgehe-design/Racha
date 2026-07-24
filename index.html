@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Racha diaria (simple)</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f6f8fa;padding:2rem;color:#111}
+    .wrap{max-width:720px;margin:0 auto}
+    .card{background:#fff;padding:1.25rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:1rem}
+    h1{margin:0 0 .5rem;font-size:1.25rem}
+    .streak{font-size:2.25rem;font-weight:700;color:#0b63ff;margin:.5rem 0}
+    .btn{padding:.6rem 1rem;border-radius:8px;border:0;background:#0b63ff;color:#fff;cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:default}
+    .small{font-size:.9rem;color:#666}
+    .badge{margin-top:1rem;padding:.6rem .8rem;background:#fff7cc;border:1px solid #ffe59a;border-radius:8px;color:#6a4d00;font-weight:700;display:inline-block}
+    input[type="text"]{padding:.5rem;border-radius:6px;border:1px solid #ddd}
+    .row{display:flex;gap:.5rem;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div class="small">Usuario</div>
+          <div style="display:flex;gap:.5rem;align-items:center;margin-top:.25rem;">
+            <input id="username" type="text" placeholder="Tu nombre (ej: ana)" />
+            <button id="setUser" class="btn">Usar</button>
+            <button id="guestBtn" class="btn" style="background:#888">Invitado</button>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">Estado</div>
+          <div id="currentUser" class="small" style="margin-top:.25rem;color:#0b63ff">No hay usuario</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="app" class="card" style="display:none">
+      <h1>Racha diaria</h1>
+      <div class="small">Tu racha actual</div>
+      <div class="streak" id="streakCount">0</div>
+
+      <button id="checkBtn" class="btn">1+ racha</button>
+      <div class="small" id="statusText">Cargando...</div>
+
+      <div id="badge" class="badge" style="display:none">🏅 Logro desbloqueado: empezar es bueno</div>
+      <div style="margin-top:1rem" class="small">Consejo: abre la web cada día y toca "1+ racha". Si te olvidas un día, la racha se reinicia.</div>
+
+      <div style="margin-top:1rem" class="small">¿Querés limpiar la racha de este usuario? <button id="resetBtn" class="btn" style="background:#e74c3c">Reset</button></div>
+    </div>
+
+    <div class="card small">
+      Hosting rápido: si querés publicarlo:
+      <ul>
+        <li>GitHub Pages: crea un repo, subí index.html y activa Pages en la rama main (o gh-pages).</li>
+        <li>Netlify Drop: arrastrá index.html a https://app.netlify.com/drop y listo.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Formato YYYY-MM-DD local
+    function toYMD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+    function todayYMD(){ return toYMD(new Date()); }
+    function dateMinusDays(ymd, days){ const [y,m,d]=ymd.split('-').map(Number); const date=new Date(y,m-1,d); date.setDate(date.getDate()-days); return toYMD(date); }
+    function msUntilNextLocalMidnight(){ const now=new Date(), next=new Date(now); next.setHours(24,0,1,0); return next-now; }
+
+    // Elementos
+    const usernameInput = document.getElementById('username');
+    const setUserBtn = document.getElementById('setUser');
+    const guestBtn = document.getElementById('guestBtn');
+    const currentUserEl = document.getElementById('currentUser');
+    const app = document.getElementById('app');
+    const checkBtn = document.getElementById('checkBtn');
+    const streakCount = document.getElementById('streakCount');
+    const statusText = document.getElementById('statusText');
+    const badgeEl = document.getElementById('badge');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let userKey = null; // clave en localStorage
+    let state = { lastCheck: null, streak: 0, badgeUnlocked: false };
+
+    function makeKey(name){ return 'streak_user_' + name.toLowerCase().replace(/\s+/g,'_'); }
+
+    function loadState(){
+      if(!userKey){ state = { lastCheck:null, streak:0, badgeUnlocked:false }; return; }
+      try{
+        const raw = localStorage.getItem(userKey);
+        state = raw ? JSON.parse(raw) : { lastCheck:null, streak:0, badgeUnlocked:false };
+      }catch(e){ console.error(e); state = { lastCheck:null, streak:0, badgeUnlocked:false }; }
+    }
+    function saveState(){ if(!userKey) return; localStorage.setItem(userKey, JSON.stringify(state)); }
+
+    function updateUI(){
+      streakCount.textContent = state.streak;
+      const today = todayYMD();
+      if(state.lastCheck === today){
+        checkBtn.disabled = true;
+        statusText.textContent = 'Ya marcaste hoy. Vuelve mañana.';
+      } else {
+        checkBtn.disabled = false;
+        statusText.textContent = 'Pulsa "1+ racha" para marcar el día.';
+      }
+      badgeEl.style.display = state.badgeUnlocked ? 'inline-block' : 'none';
+    }
+
+    function setUser(name){
+      if(!name) return;
+      userKey = makeKey(name);
+      currentUserEl.textContent = name;
+      app.style.display = 'block';
+      loadState();
+      updateUI();
+      scheduleMidnight();
+    }
+
+    setUserBtn.addEventListener('click', ()=>{
+      const name = usernameInput.value.trim();
+      if(!name) return alert('Ingresá un nombre de usuario (puede ser simple).');
+      setUser(name);
+    });
+    guestBtn.addEventListener('click', ()=>{
+      setUser('invitado');
+    });
+
+    checkBtn.addEventListener('click', ()=>{
+      const today = todayYMD();
+      const yesterday = dateMinusDays(today,1);
+      if(state.lastCheck === today) return;
+      if(state.lastCheck === yesterday){
+        state.streak = (state.streak || 0) + 1;
+      } else {
+        state.streak = 1;
+      }
+      state.lastCheck = today;
+      if(!state.badgeUnlocked && state.streak >= 1){
+        state.badgeUnlocked = true;
+        setTimeout(()=>alert('🏅 ¡Logro desbloqueado: empezar es bueno!'),50);
+      }
+      saveState();
+      updateUI();
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      if(!confirm('Resetear racha de este usuario?')) return;
+      state = { lastCheck:null, streak:0, badgeUnlocked:false };
+      saveState();
+      updateUI();
+    });
+
+    // Re-evaluar a medianoche local
+    function scheduleMidnight(){
+      setTimeout(()=>{
+        loadState();
+        updateUI();
+        scheduleMidnight();
+      }, msUntilNextLocalMidnight());
+    }
+
+    // Si querés, detecta si hay usuarios guardados y muestra uno por defecto:
+    (function tryDefaultUser(){
+      // Si existe 'streak_user_default' úsalo; sino no hacer nada.
+      const keys = Object.keys(localStorage);
+      const any = keys.find(k => k.startsWith('streak_user_'));
+      if(any){
+        const name = any.replace('streak_user_','').replace(/_/g,' ');
+        currentUserEl.textContent = name;
+        userKey = any;
+        loadState();
+        app.style.display = 'block';
+        updateUI();
+        scheduleMidnight();
+      }
+    })();
+  </script>
+</body>
+</html>
