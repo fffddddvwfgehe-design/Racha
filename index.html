@@ -3,84 +3,229 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Racha diaria (simple)</title>
+  <title>Racha bonita — Tu día</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f6f8fa;padding:2rem;color:#111}
-    .wrap{max-width:720px;margin:0 auto}
-    .card{background:#fff;padding:1.25rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:1rem}
-    h1{margin:0 0 .5rem;font-size:1.25rem}
-    .streak{font-size:2.25rem;font-weight:700;color:#0b63ff;margin:.5rem 0}
-    .btn{padding:.6rem 1rem;border-radius:8px;border:0;background:#0b63ff;color:#fff;cursor:pointer}
-    .btn[disabled]{opacity:.5;cursor:default}
-    .small{font-size:.9rem;color:#666}
-    .badge{margin-top:1rem;padding:.6rem .8rem;background:#fff7cc;border:1px solid #ffe59a;border-radius:8px;color:#6a4d00;font-weight:700;display:inline-block}
-    input[type="text"]{padding:.5rem;border-radius:6px;border:1px solid #ddd}
-    .row{display:flex;gap:.5rem;align-items:center}
+    :root{
+      --bg:#f6f9ff; --card:#ffffff; --accent:#ffb547; --accent-2:#ff7a7a; --muted:#6b7280;
+      --glass: rgba(255,255,255,0.7);
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:linear-gradient(180deg,#f6f9ff,#eef6ff);margin:0;padding:2rem; color:#0f172a}
+    .wrap{max-width:880px;margin:0 auto}
+    .header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+    .logo{width:84px;height:84px;flex:0 0 84px;border-radius:18px;background:linear-gradient(180deg,var(--accent),#ff9b2b);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(255,123,0,.12)}
+    .logo svg{width:68px;height:68px}
+    h1{margin:0;font-size:1.25rem}
+    p.lead{margin:0;color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns:380px 1fr;gap:1rem}
+    @media(max-width:820px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);padding:1.25rem;border-radius:14px;box-shadow:0 10px 30px rgba(16,24,40,0.06)}
+
+    /* left panel */
+    .streak-area{display:flex;flex-direction:column;align-items:center;gap:.9rem}
+    .ring{width:220px;height:220px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--accent) 0deg, #e6f3ff 0deg);position:relative}
+    .ring-inner{width:180px;height:180px;border-radius:50%;background:linear-gradient(180deg,#fff,#fbfdff);display:flex;flex-direction:column;align-items:center;justify-content:center;border:6px solid rgba(255,255,255,0.6)}
+    .streak-num{font-size:44px;font-weight:900;color:#0f172a}
+    .streak-label{color:var(--muted);font-weight:600}
+
+    .mascot{width:88px;height:88px;margin-top:6px}
+
+    /* mascot animations */
+    .mascot-anim{transform-origin:center center;animation:float 3s ease-in-out infinite}
+    @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+    .mascot-burst{animation:burst 0.7s ease forwards}
+    @keyframes burst{0%{transform:scale(1)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+    .eye-spark{animation:spark 1.8s infinite}
+    @keyframes spark{0%{opacity:0}40%{opacity:1}60%{opacity:1}100%{opacity:0}}
+
+    .actions{display:flex;gap:.6rem;align-items:center}
+    .btn{padding:.65rem 1rem;border-radius:10px;border:0;background:linear-gradient(180deg,var(--accent),#ff9833);color:white;font-weight:700;cursor:pointer;box-shadow:0 8px 18px rgba(255,138,61,.18)}
+    .btn.secondary{background:transparent;color:#334155;border:1px solid #e6eefc;box-shadow:none}
+    .btn[disabled]{opacity:.6;cursor:default}
+
+    .meta{color:var(--muted);font-size:.95rem;text-align:center}
+
+    /* right panel */
+    .right h3{margin-top:0}
+    .list{display:flex;flex-direction:column;gap:.85rem}
+    .item{display:flex;align-items:center;gap:.8rem;padding:.75rem;border-radius:10px;border:1px solid #f1f5f9}
+    .item .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent-2))}
+
+    .badge{display:inline-block;padding:.5rem .7rem;border-radius:999px;background:linear-gradient(180deg,#fff7cc,#fff1b8);color:#6a4d00;font-weight:800}
+
+    .small{font-size:.9rem;color:var(--muted)}
+
+    /* file input & export */
+    .file-controls{display:flex;gap:.6rem;align-items:center}
+    input[type=file]{display:none}
+
+    /* subtle animation when unlocked */
+    .pulse{animation:pulse 1.2s ease-in-out}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+
+    /* confetti canvas overlay */
+    #confetti-canvas{position:fixed;left:0;top:0;pointer-events:none;width:100%;height:100%;z-index:9999}
+
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div>
-          <div class="small">Usuario</div>
-          <div style="display:flex;gap:.5rem;align-items:center;margin-top:.25rem;">
-            <input id="username" type="text" placeholder="Tu nombre (ej: ana)" />
-            <button id="setUser" class="btn">Usar</button>
-            <button id="guestBtn" class="btn" style="background:#888">Invitado</button>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div class="small">Estado</div>
-          <div id="currentUser" class="small" style="margin-top:.25rem;color:#0b63ff">No hay usuario</div>
-        </div>
+    <div class="header">
+      <div class="logo" aria-hidden>
+        <!-- detailed inline SVG mascot (traced & stylized) -->
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="mascota">
+          <defs>
+            <radialGradient id="gA" cx="40%" cy="30%">
+              <stop offset="0%" stop-color="#fff9d8"/>
+              <stop offset="40%" stop-color="#ffd24a"/>
+              <stop offset="100%" stop-color="#ff9b2b"/>
+            </radialGradient>
+            <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.2" result="b"/>
+              <feBlend in="SourceGraphic" in2="b" mode="normal"/>
+            </filter>
+          </defs>
+          <g filter="url(#s)">
+            <path d="M30 60c0-22 10-40 30-40s30 18 30 40c0 13-10 32-30 32S30 73 30 60z" fill="url(#gA)" stroke="#ffb347" stroke-width="1"/>
+            <!-- blush -->
+            <ellipse cx="45" cy="78" rx="6" ry="3.6" fill="#ffd9b3" opacity="0.8" />
+            <ellipse cx="75" cy="78" rx="6" ry="3.6" fill="#ffd9b3" opacity="0.8" />
+            <!-- eyes -->
+            <g transform="translate(0,0)">
+              <ellipse cx="46" cy="52" rx="10" ry="12" fill="#fff" />
+              <ellipse cx="74" cy="52" rx="10" ry="12" fill="#fff" />
+              <circle cx="46" cy="54" r="5" fill="#3b2a1f" />
+              <circle cx="74" cy="54" r="5" fill="#3b2a1f" />
+              <!-- sparkles -->
+              <circle class="eye-spark" cx="50" cy="48" r="2.2" fill="#fff" />
+              <circle class="eye-spark" cx="78" cy="48" r="2.2" fill="#fff" />
+            </g>
+            <!-- mouth -->
+            <path d="M52 72c4 3 12 3 16 0" stroke="#4b2a00" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <h1>Racha bonita</h1>
+        <p class="lead">Toca el botón cada día para mantener tu racha. ¡Empezar es lo más importante!</p>
       </div>
     </div>
 
-    <div id="app" class="card" style="display:none">
-      <h1>Racha diaria</h1>
-      <div class="small">Tu racha actual</div>
-      <div class="streak" id="streakCount">0</div>
+    <div class="grid">
+      <div class="card streak-area">
+        <div class="ring" id="progressRing" aria-hidden>
+          <div class="ring-inner">
+            <div class="mascot mascot-anim" id="mascotLarge" aria-hidden>
+              <!-- larger traced SVG mascot for center (more detail + scalable) -->
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <radialGradient id="bgGrad" cx="40%" cy="30%">
+                    <stop offset="0%" stop-color="#fff9d8"/>
+                    <stop offset="45%" stop-color="#ffd24a"/>
+                    <stop offset="100%" stop-color="#ff9b2b"/>
+                  </radialGradient>
+                </defs>
+                <g>
+                  <path id="body" d="M50 100c0-60 40-100 100-100s100 40 100 100c0 35-30 85-100 85S50 140 50 100z" transform="translate(-50,-20) scale(0.9)" fill="url(#bgGrad)" stroke="#ffb347" stroke-width="1.6"/>
+                  <!-- eyes -->
+                  <g transform="translate(0,-10)">
+                    <ellipse cx="82" cy="90" rx="20" ry="24" fill="#fff" />
+                    <ellipse cx="138" cy="90" rx="20" ry="24" fill="#fff" />
+                    <circle cx="82" cy="96" r="9" fill="#3b2a1f" />
+                    <circle cx="138" cy="96" r="9" fill="#3b2a1f" />
+                    <circle cx="92" cy="86" r="3" fill="#fff" opacity="0.95" />
+                    <circle cx="150" cy="86" r="3" fill="#fff" opacity="0.95" />
+                  </g>
+                  <!-- mouth -->
+                  <path d="M94 130c6 5 20 5 28 0" stroke="#4b2a00" stroke-width="3" stroke-linecap="round" fill="none"/>
+                </g>
+              </svg>
+            </div>
+            <div style="text-align:center">
+              <div class="streak-num" id="streakCount">0</div>
+              <div class="streak-label">Días seguidos</div>
+            </div>
+          </div>
+        </div>
 
-      <button id="checkBtn" class="btn">1+ racha</button>
-      <div class="small" id="statusText">Cargando...</div>
+        <div class="actions">
+          <button id="checkBtn" class="btn">Marcar hoy</button>
+          <button id="resetBtn" class="btn secondary">Reset</button>
+        </div>
 
-      <div id="badge" class="badge" style="display:none">🏅 Logro desbloqueado: empezar es bueno</div>
-      <div style="margin-top:1rem" class="small">Consejo: abre la web cada día y toca "1+ racha". Si te olvidas un día, la racha se reinicia.</div>
+        <div class="meta" id="statusText">Carga el usuario o crea uno para comenzar.</div>
 
-      <div style="margin-top:1rem" class="small">¿Querés limpiar la racha de este usuario? <button id="resetBtn" class="btn" style="background:#e74c3c">Reset</button></div>
-    </div>
+        <div class="small" style="margin-top:.6rem">Insignia al primer día:</div>
+        <div style="margin-top:.4rem"><span id="badge" class="badge hidden">🏅 Logro desbloqueado: empezar es bueno</span></div>
+      </div>
 
-    <div class="card small">
-      Hosting rápido: si querés publicarlo:
-      <ul>
-        <li>GitHub Pages: crea un repo, subí index.html y activa Pages en la rama main (o gh-pages).</li>
-        <li>Netlify Drop: arrastrá index.html a https://app.netlify.com/drop y listo.</li>
-      </ul>
+      <div class="card right">
+        <h3>Cuenta local</h3>
+        <div class="small">Usá un nombre para separar rachas en este navegador. Para sincronizar entre dispositivos necesitarás una cuenta en la nube (puedo ayudarte con eso).</div>
+
+        <div style="margin-top:1rem;display:flex;gap:.6rem;align-items:center">
+          <input id="username" type="text" placeholder="tu nombre (ej: Ana)" style="flex:1;padding:.6rem;border-radius:8px;border:1px solid #e6eefc" />
+          <button id="setUser" class="btn secondary">Usar</button>
+          <button id="guestBtn" class="btn">Invitado</button>
+        </div>
+
+        <div style="margin-top:1rem" class="list">
+          <div class="item"><div style="flex:1"><strong id="currentUser">Nadie</strong><div class="small">Usuario activo</div></div><div class="small">Origen: <span id="originDisplay"></span></div></div>
+
+          <div class="item"><div style="flex:1">Exportar/Importar racha</div>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <button id="exportBtn" class="btn secondary">Exportar</button>
+              <label class="btn secondary" for="importFile" style="cursor:pointer">Importar</label>
+              <input id="importFile" type="file" accept="application/json" />
+            </div>
+          </div>
+
+          <div class="item"><div style="flex:1">Borrar datos del usuario</div>
+            <div><button id="deleteBtn" class="btn secondary">Borrar</button></div>
+          </div>
+
+        </div>
+
+        <div style="margin-top:1rem" class="small">Nota: los datos se guardan en tu navegador (localStorage) para el dominio actual. Si abriste la app desde otra URL (por ejemplo raw.githubusercontent) los datos estarán allí y no se comparten entre orígenes por motivos de seguridad del navegador.</div>
+      </div>
     </div>
   </div>
 
+  <canvas id="confetti-canvas"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <script>
-    // Formato YYYY-MM-DD local
+    // -- util fechas (YYYY-MM-DD) --
     function toYMD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
     function todayYMD(){ return toYMD(new Date()); }
-    function dateMinusDays(ymd, days){ const [y,m,d]=ymd.split('-').map(Number); const date=new Date(y,m-1,d); date.setDate(date.getDate()-days); return toYMD(date); }
+    function dateMinusDays(ymd, days){ const [y,m,d]=ymd.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()-days); return toYMD(dt); }
     function msUntilNextLocalMidnight(){ const now=new Date(), next=new Date(now); next.setHours(24,0,1,0); return next-now; }
 
-    // Elementos
-    const usernameInput = document.getElementById('username');
+    // -- elementos --
     const setUserBtn = document.getElementById('setUser');
     const guestBtn = document.getElementById('guestBtn');
+    const usernameInput = document.getElementById('username');
     const currentUserEl = document.getElementById('currentUser');
-    const app = document.getElementById('app');
-    const checkBtn = document.getElementById('checkBtn');
-    const streakCount = document.getElementById('streakCount');
-    const statusText = document.getElementById('statusText');
-    const badgeEl = document.getElementById('badge');
-    const resetBtn = document.getElementById('resetBtn');
+    const originDisplay = document.getElementById('originDisplay');
 
-    let userKey = null; // clave en localStorage
-    let state = { lastCheck: null, streak: 0, badgeUnlocked: false };
+    const checkBtn = document.getElementById('checkBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const bonusBadge = document.getElementById('badge');
+    const streakCountEl = document.getElementById('streakCount');
+    const statusText = document.getElementById('statusText');
+
+    const exportBtn = document.getElementById('exportBtn');
+    const importFile = document.getElementById('importFile');
+    const mascotLarge = document.getElementById('mascotLarge');
+
+    let userKey = null;
+    let state = { lastCheck:null, streak:0, badgeUnlocked:false };
 
     function makeKey(name){ return 'streak_user_' + name.toLowerCase().replace(/\s+/g,'_'); }
 
@@ -89,91 +234,134 @@
       try{
         const raw = localStorage.getItem(userKey);
         state = raw ? JSON.parse(raw) : { lastCheck:null, streak:0, badgeUnlocked:false };
-      }catch(e){ console.error(e); state = { lastCheck:null, streak:0, badgeUnlocked:false }; }
+      }catch(e){ console.error('load',e); state = { lastCheck:null, streak:0, badgeUnlocked:false }; }
     }
     function saveState(){ if(!userKey) return; localStorage.setItem(userKey, JSON.stringify(state)); }
+    function deleteState(){ if(!userKey) return; localStorage.removeItem(userKey); state={lastCheck:null,streak:0,badgeUnlocked:false}; }
 
     function updateUI(){
-      streakCount.textContent = state.streak;
+      streakCountEl.textContent = state.streak || 0;
       const today = todayYMD();
       if(state.lastCheck === today){
         checkBtn.disabled = true;
         statusText.textContent = 'Ya marcaste hoy. Vuelve mañana.';
       } else {
         checkBtn.disabled = false;
-        statusText.textContent = 'Pulsa "1+ racha" para marcar el día.';
+        statusText.textContent = 'Pulsa "Marcar hoy" para mantener la racha.';
       }
-      badgeEl.style.display = state.badgeUnlocked ? 'inline-block' : 'none';
+      if(state.badgeUnlocked) bonusBadge.classList.remove('hidden'); else bonusBadge.classList.add('hidden');
     }
 
     function setUser(name){
-      if(!name) return;
+      if(!name) return alert('Ingresa un nombre');
       userKey = makeKey(name);
       currentUserEl.textContent = name;
-      app.style.display = 'block';
-      loadState();
-      updateUI();
-      scheduleMidnight();
+      originDisplay.textContent = location.origin.replace('https://','').replace('http://','');
+      loadState(); updateUI(); scheduleMidnight();
     }
 
-    setUserBtn.addEventListener('click', ()=>{
-      const name = usernameInput.value.trim();
-      if(!name) return alert('Ingresá un nombre de usuario (puede ser simple).');
-      setUser(name);
-    });
-    guestBtn.addEventListener('click', ()=>{
-      setUser('invitado');
-    });
+    setUserBtn.addEventListener('click', ()=> setUser(usernameInput.value.trim()));
+    guestBtn.addEventListener('click', ()=> setUser('Invitado'));
 
     checkBtn.addEventListener('click', ()=>{
+      if(!userKey){ return alert('Selecciona o crea un usuario primero'); }
       const today = todayYMD();
       const yesterday = dateMinusDays(today,1);
       if(state.lastCheck === today) return;
-      if(state.lastCheck === yesterday){
-        state.streak = (state.streak || 0) + 1;
-      } else {
-        state.streak = 1;
-      }
+      if(state.lastCheck === yesterday){ state.streak = (state.streak || 0) + 1; }
+      else { state.streak = 1; }
       state.lastCheck = today;
-      if(!state.badgeUnlocked && state.streak >= 1){
-        state.badgeUnlocked = true;
-        setTimeout(()=>alert('🏅 ¡Logro desbloqueado: empezar es bueno!'),50);
-      }
-      saveState();
-      updateUI();
+      if(!state.badgeUnlocked && state.streak >= 1){ state.badgeUnlocked = true; triggerBadge(); }
+      saveState(); updateUI();
+      updateRing();
     });
 
     resetBtn.addEventListener('click', ()=>{
-      if(!confirm('Resetear racha de este usuario?')) return;
+      if(!userKey) return alert('No hay usuario');
+      if(!confirm('Reiniciar racha de '+currentUserEl.textContent+'?')) return;
       state = { lastCheck:null, streak:0, badgeUnlocked:false };
-      saveState();
-      updateUI();
+      saveState(); updateUI(); updateRing();
     });
 
-    // Re-evaluar a medianoche local
-    function scheduleMidnight(){
-      setTimeout(()=>{
-        loadState();
-        updateUI();
-        scheduleMidnight();
-      }, msUntilNextLocalMidnight());
+    deleteBtn.addEventListener('click', ()=>{
+      if(!userKey) return alert('No hay usuario');
+      if(!confirm('¿Borrar todos los datos de '+currentUserEl.textContent+'?')) return;
+      deleteState(); saveState(); updateUI(); updateRing();
+    });
+
+    // Export/Import
+    exportBtn.addEventListener('click', ()=>{
+      if(!userKey) return alert('Selecciona un usuario');
+      const payload = { user: userKey, state: state, origin: location.origin };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = (userKey||'streak')+'.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    importFile.addEventListener('change', (e)=>{
+      const f = e.target.files[0]; if(!f) return; const reader = new FileReader();
+      reader.onload = (ev)=>{
+        try{
+          const obj = JSON.parse(ev.target.result);
+          // If file contains user key or state
+          if(obj.user && obj.state){
+            // ask user whether to import into current user or keep file user
+            const choose = confirm('Importar los datos al usuario actual? (OK = sí, Cancelar = crear/usar usuario del archivo)');
+            if(choose){
+              if(!userKey) return alert('Selecciona un usuario antes de importar');
+              state = obj.state; saveState(); updateUI(); updateRing();
+              alert('Importado en usuario actual.');
+            } else {
+              // set user from file
+              const fileUser = obj.user.replace(/^streak_user_/, '');
+              const name = fileUser.replace(/_/g,' ');
+              setUser(name);
+              state = obj.state; saveState(); updateUI(); updateRing();
+              alert('Importado como usuario '+name);
+            }
+          } else if (obj.state) {
+            if(!userKey) return alert('Selecciona un usuario antes de importar');
+            state = obj.state; saveState(); updateUI(); updateRing();
+            alert('Importado correctamente.');
+          } else { alert('Archivo no válido'); }
+        } catch(err){ alert('Error leyendo archivo: '+err.message); }
+      };
+      reader.readAsText(f);
+      e.target.value = '';
+    });
+
+    // confetti + badge
+    function triggerBadge(){
+      if(typeof confetti === 'function'){
+        confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
+      }
+      bonusBadge.classList.add('pulse');
+      // animate mascot with burst
+      if(mascotLarge){ mascotLarge.classList.add('mascot-burst'); setTimeout(()=>mascotLarge.classList.remove('mascot-burst'),800); }
+      setTimeout(()=>bonusBadge.classList.remove('pulse'),1200);
     }
 
-    // Si querés, detecta si hay usuarios guardados y muestra uno por defecto:
-    (function tryDefaultUser(){
-      // Si existe 'streak_user_default' úsalo; sino no hacer nada.
-      const keys = Object.keys(localStorage);
-      const any = keys.find(k => k.startsWith('streak_user_'));
-      if(any){
-        const name = any.replace('streak_user_','').replace(/_/g,' ');
-        currentUserEl.textContent = name;
-        userKey = any;
-        loadState();
-        app.style.display = 'block';
-        updateUI();
-        scheduleMidnight();
-      }
+    // progress ring visualization (simple)
+    function updateRing(){
+      const ring = document.getElementById('progressRing');
+      const val = Math.min(state.streak || 0, 30); // cap for visual
+      const pct = Math.min(100, Math.round((val / 30) * 100));
+      const deg = Math.round((pct / 100) * 360);
+      ring.style.background = `conic-gradient(var(--accent) ${deg}deg, #e6f3ff ${deg}deg)`;
+    }
+
+    // midnight re-evaluation
+    function scheduleMidnight(){
+      setTimeout(()=>{ loadState(); updateUI(); updateRing(); scheduleMidnight(); }, msUntilNextLocalMidnight());
+    }
+
+    // try to auto-load an existing user key
+    (function init(){
+      const any = Object.keys(localStorage).find(k=>k.startsWith('streak_user_'));
+      if(any){ userKey = any; const name = any.replace('streak_user_','').replace(/_/g,' '); currentUserEl.textContent = name; originDisplay.textContent = location.origin.replace('https://','').replace('http://',''); loadState(); updateUI(); updateRing(); scheduleMidnight(); }
+      else { originDisplay.textContent = location.origin.replace('https://','').replace('http://',''); }
     })();
+
   </script>
 </body>
 </html>
